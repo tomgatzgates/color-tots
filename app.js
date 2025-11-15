@@ -22,7 +22,7 @@ const DEFAULT_SYSTEM_PROMPT = `Create a cute, child-friendly coloring book illus
 Rules:
 - Line art style.
 - Thick, smooth black outlines only.
-- No border.
+- No page border.
 - No shading, gradients, or cross-hatching — pure white fill areas for coloring.
 - Uniform line weight (slightly bold, consistent throughout).
 - Clean, closed shapes with no sketchiness.
@@ -348,4 +348,35 @@ if (!localStorage.getItem('gemini_api_key')) {
         settingsModal.classList.add('show');
         showMessage('Welcome! Please enter your Google Gemini API key to get started 🚀', 'success');
     }, 500);
+}
+
+// Sparkly star trail on mouse move (desktop only)
+if (window.innerWidth > 768) {
+    let lastSparkleTime = 0;
+    document.addEventListener('mousemove', (e) => {
+        const now = Date.now();
+        // Throttle to every 50ms
+        if (now - lastSparkleTime < 50) return;
+        lastSparkleTime = now;
+
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        sparkle.style.left = `${e.pageX}px`;
+        sparkle.style.top = `${e.pageY}px`;
+
+        // Random movement direction
+        sparkle.style.setProperty('--random-x', (Math.random() - 0.5) * 2);
+        sparkle.style.setProperty('--random-y', -20 - Math.random() * 30);
+
+        // Random star characters
+        const stars = ['✨', '⭐', '🌟', '💫', '⚡'];
+        sparkle.textContent = stars[Math.floor(Math.random() * stars.length)];
+
+        document.body.appendChild(sparkle);
+
+        // Remove after animation completes
+        setTimeout(() => {
+            sparkle.remove();
+        }, 1000);
+    });
 }
