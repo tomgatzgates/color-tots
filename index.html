@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Tots - AI Coloring Pages</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="stars"></div>
+
+    <div class="container">
+        <header class="header">
+            <h1 class="title bounce">🎨 Color Tots 🖍️</h1>
+            <p class="subtitle">Create magical coloring pages!</p>
+        </header>
+
+        <div class="settings-icon" id="settingsBtn">⚙️</div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Settings</h2>
+
+                <div class="form-group">
+                    <label for="apiToken">Google Gemini API Key:</label>
+                    <input type="password" id="apiToken" placeholder="AIza...">
+                    <small>Your key is saved locally and never uploaded</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="pageSize">Page Size:</label>
+                    <select id="pageSize">
+                        <option value="letter">Letter (8.5 x 11 in)</option>
+                        <option value="a4">A4 (210 x 297 mm)</option>
+                        <option value="poster">Poster (18 x 24 in)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="orientation">Orientation:</label>
+                    <select id="orientation">
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="systemPrompt">System Prompt:</label>
+                    <textarea id="systemPrompt" rows="8" placeholder="Enter your system prompt for image generation..."></textarea>
+                    <small>Instructions for how the AI should generate coloring pages</small>
+                </div>
+
+                <button class="save-btn" id="saveSettings">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Main Input Area -->
+        <div class="input-section">
+            <label for="promptInput" class="prompt-label">What would you like to color?</label>
+            <input
+                type="text"
+                id="promptInput"
+                class="prompt-input"
+                placeholder="A friendly dinosaur playing in a garden..."
+            >
+            <button id="generateBtn" class="generate-btn">
+                ✨ Create Magic! ✨
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Creating your coloring page...</p>
+        </div>
+
+        <!-- Image Display -->
+        <div id="imageSection" class="image-section hidden">
+            <div class="museum-frame">
+                <div class="frame-border">
+                    <img id="generatedImage" alt="Your coloring page">
+                </div>
+                <div class="frame-plaque">Your Masterpiece</div>
+            </div>
+
+            <button id="printBtn" class="print-btn">
+                🖨️ Print & Color! 🖨️
+            </button>
+
+            <button id="newBtn" class="new-btn">
+                Make Another One
+            </button>
+        </div>
+
+        <!-- Error Display -->
+        <div id="errorMsg" class="error-msg hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
