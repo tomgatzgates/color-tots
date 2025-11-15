@@ -37,7 +37,7 @@
                     <label for="pageSize">Page Size:</label>
                     <select id="pageSize">
                         <option value="letter">Letter (8.5 x 11 in)</option>
-                        <option value="a4">A4 (210 x 297 mm)</option>
+                        <option value="a4" selected>A4 (210 x 297 mm)</option>
                         <option value="poster">Poster (18 x 24 in)</option>
                     </select>
                 </div>
@@ -46,7 +46,7 @@
                     <label for="orientation">Orientation:</label>
                     <select id="orientation">
                         <option value="portrait">Portrait</option>
-                        <option value="landscape">Landscape</option>
+                        <option value="landscape" selected>Landscape</option>
                     </select>
                 </div>
 
@@ -63,12 +63,12 @@
         <!-- Main Input Area -->
         <div class="input-section">
             <label for="promptInput" class="prompt-label">What would you like to color?</label>
-            <input
-                type="text"
+            <textarea
                 id="promptInput"
                 class="prompt-input"
+                rows="3"
                 placeholder="A friendly dinosaur playing in a garden..."
-            >
+            ></textarea>
             <button id="generateBtn" class="generate-btn">
                 ✨ Create Magic! ✨
             </button>
@@ -76,7 +76,14 @@
 
         <!-- Loading State -->
         <div id="loading" class="loading hidden">
-            <div class="spinner"></div>
+            <div class="emoji-cycle">
+                <span class="emoji">🎨</span>
+                <span class="emoji">🖍️</span>
+                <span class="emoji">🖌️</span>
+                <span class="emoji">✏️</span>
+                <span class="emoji">🌈</span>
+                <span class="emoji">⭐</span>
+            </div>
             <p>Creating your coloring page...</p>
         </div>
 
@@ -86,15 +93,13 @@
                 <div class="frame-border">
                     <img id="generatedImage" alt="Your coloring page">
                 </div>
-                <div class="frame-plaque">Your Masterpiece</div>
+                <button id="printBtn" class="print-btn">
+                    🖨️ Print 🖨️
+                </button>
             </div>
 
-            <button id="printBtn" class="print-btn">
-                🖨️ Print & Color! 🖨️
-            </button>
-
             <button id="newBtn" class="new-btn">
-                Make Another One
+                Make another
             </button>
         </div>
 

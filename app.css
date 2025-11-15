@@ -276,6 +276,8 @@ body {
     font-family: inherit;
     margin-bottom: 20px;
     transition: border-color 0.3s;
+    resize: vertical;
+    min-height: 80px;
 }
 
 .prompt-input:focus {
@@ -317,19 +319,50 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
-.spinner {
-    width: 80px;
-    height: 80px;
+.emoji-cycle {
+    position: relative;
+    height: 100px;
     margin: 0 auto 20px;
-    border: 8px solid #f3f3f3;
-    border-top: 8px solid #667eea;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.emoji-cycle .emoji {
+    position: absolute;
+    font-size: 5em;
+    opacity: 0;
+    animation: emojiCycle 3s infinite;
+}
+
+.emoji-cycle .emoji:nth-child(1) { animation-delay: 0s; }
+.emoji-cycle .emoji:nth-child(2) { animation-delay: 0.5s; }
+.emoji-cycle .emoji:nth-child(3) { animation-delay: 1s; }
+.emoji-cycle .emoji:nth-child(4) { animation-delay: 1.5s; }
+.emoji-cycle .emoji:nth-child(5) { animation-delay: 2s; }
+.emoji-cycle .emoji:nth-child(6) { animation-delay: 2.5s; }
+
+@keyframes emojiCycle {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    5% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    10% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    15% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
 }
 
 .loading p {
@@ -366,56 +399,44 @@ body {
     border-radius: 5px;
 }
 
-.frame-plaque {
+.print-btn {
     background: linear-gradient(145deg, #c9a96e 0%, #a0826d 100%);
     color: #2c1810;
     padding: 15px 30px;
+    border: none;
     border-radius: 10px;
     margin-top: 20px;
     font-size: 1.2em;
     font-weight: bold;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.print-btn {
-    padding: 25px 50px;
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: white;
-    border: none;
-    border-radius: 25px;
-    font-size: 1.8em;
-    font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5);
     transition: transform 0.2s, box-shadow 0.2s;
-    margin-bottom: 15px;
-    display: block;
     width: 100%;
 }
 
 .print-btn:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(79, 172, 254, 0.7);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
 }
 
 .new-btn {
-    padding: 15px 30px;
-    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-    color: #764ba2;
+    padding: 0;
+    margin-top: 20px;
+    background: none;
+    color: white;
     border: none;
-    border-radius: 20px;
-    font-size: 1.2em;
-    font-weight: bold;
+    font-size: 1em;
+    font-weight: normal;
+    text-decoration: underline;
     cursor: pointer;
-    box-shadow: 0 5px 15px rgba(168, 237, 234, 0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: opacity 0.2s;
     display: block;
     width: 100%;
+    text-align: center;
 }
 
 .new-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 7px 20px rgba(168, 237, 234, 0.6);
+    opacity: 0.8;
 }
 
 /* Messages */

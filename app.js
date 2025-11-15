@@ -44,8 +44,8 @@ Scene Rules:
 // Load saved settings
 function loadSettings() {
     const token = localStorage.getItem('gemini_api_key');
-    const pageSize = localStorage.getItem('page_size') || 'letter';
-    const orientation = localStorage.getItem('orientation') || 'portrait';
+    const pageSize = localStorage.getItem('page_size') || 'a4';
+    const orientation = localStorage.getItem('orientation') || 'landscape';
     const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
 
     if (token) {
@@ -162,8 +162,8 @@ function getPageSizeDescription(size) {
 async function generateColoringPage() {
     const apiKey = localStorage.getItem('gemini_api_key');
     const prompt = promptInput.value.trim();
-    const pageSize = localStorage.getItem('page_size') || 'letter';
-    const orientation = localStorage.getItem('orientation') || 'portrait';
+    const pageSize = localStorage.getItem('page_size') || 'a4';
+    const orientation = localStorage.getItem('orientation') || 'landscape';
 
     // Validation
     if (!apiKey) {
@@ -241,8 +241,8 @@ async function generateColoringPage() {
 // Print functionality
 function printImage() {
     const printWindow = window.open('', '_blank');
-    const pageSize = localStorage.getItem('page_size') || 'letter';
-    const orientation = localStorage.getItem('orientation') || 'portrait';
+    const pageSize = localStorage.getItem('page_size') || 'a4';
+    const orientation = localStorage.getItem('orientation') || 'landscape';
 
     const pageStyles = {
         letter: orientation === 'landscape' ? 'width: 11in; height: 8.5in;' : 'width: 8.5in; height: 11in;',
