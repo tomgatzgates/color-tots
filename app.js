@@ -22,7 +22,7 @@ const DEFAULT_SYSTEM_PROMPT = `Create a cute, child-friendly coloring book illus
 Rules:
 - Line art style.
 - Thick, smooth black outlines only.
-- No page border.
+- No border around the image.
 - No shading, gradients, or cross-hatching — pure white fill areas for coloring.
 - Uniform line weight (slightly bold, consistent throughout).
 - Clean, closed shapes with no sketchiness.
