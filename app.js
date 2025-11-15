@@ -3,6 +3,7 @@ const settingsBtn = document.getElementById('settingsBtn');
 const settingsModal = document.getElementById('settingsModal');
 const closeModal = document.querySelector('.close');
 const saveSettingsBtn = document.getElementById('saveSettings');
+const generateShareLinkBtn = document.getElementById('generateShareLink');
 const apiTokenInput = document.getElementById('apiToken');
 const pageSizeSelect = document.getElementById('pageSize');
 const orientationSelect = document.getElementById('orientation');
@@ -94,6 +95,45 @@ window.addEventListener('click', (e) => {
 });
 
 saveSettingsBtn.addEventListener('click', saveSettings);
+
+// Generate shareable link with API key
+generateShareLinkBtn.addEventListener('click', () => {
+    const key = apiTokenInput.value.trim();
+    if (!key) {
+        showMessage('Please enter an API key first! 🔑');
+        return;
+    }
+
+    // Show security warning
+    const confirmed = confirm(
+        '⚠️ SECURITY WARNING ⚠️\n\n' +
+        'Sharing this link will expose your API key to anyone who receives it.\n\n' +
+        'Risks:\n' +
+        '• Anyone with this link can use your API key\n' +
+        '• All usage will be charged to your account\n' +
+        '• The key may be visible in browser history\n' +
+        '• If forwarded, your key could spread further\n\n' +
+        'Only share this link with trusted friends or family!\n\n' +
+        'Do you want to continue?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}#key=${key}`;
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        settingsModal.classList.remove('show');
+        showMessage('Link with embedded API key copied to clipboard.', 'success');
+    }).catch(() => {
+        // Fallback if clipboard API fails
+        settingsModal.classList.remove('show');
+        alert(`Share this link:\n\n${shareUrl}`);
+    });
+});
 
 // Show messages
 function showMessage(message, type = 'error') {
@@ -281,7 +321,24 @@ function createStars() {
     }
 }
 
+// Check for API key in URL hash (for easy family sharing)
+function checkUrlHash() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#key=')) {
+        const key = hash.substring(5); // Remove '#key='
+        if (key) {
+            localStorage.setItem('gemini_api_key', key);
+            // Clear the hash from URL for privacy
+            history.replaceState(null, null, ' ');
+            showMessage('API key loaded from shared link! 🎉', 'success');
+            return true;
+        }
+    }
+    return false;
+}
+
 // Initialize
+checkUrlHash();
 loadSettings();
 createStars();
 

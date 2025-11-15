@@ -231,6 +231,24 @@ body {
     box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6);
 }
 
+.share-link-btn {
+    display: inline;
+    padding: 0;
+    margin-top: 8px;
+    background: none;
+    color: #667eea;
+    border: none;
+    font-size: 0.85em;
+    font-weight: normal;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.share-link-btn:hover {
+    color: #764ba2;
+}
+
 /* Input Section */
 .input-section {
     background: white;
