@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Color Tots - Local Development Server
+
+PORT="${1:-8000}"
+
+echo "🎨 Starting Color Tots development server on port $PORT..."
+echo "📂 Serving from: $(pwd)"
+echo ""
+echo "🌐 Open your browser to: http://localhost:$PORT"
+echo ""
+echo "Press Ctrl+C to stop the server"
+echo ""
+
+# Try python3 first
+if command -v python3 &> /dev/null; then
+    python3 -m http.server "$PORT"
+# Fallback to python
+elif command -v python &> /dev/null; then
+    python -m http.server "$PORT"
+else
+    echo "❌ Error: Python not found!"
+    echo ""
+    echo "Alternative: Install and use npx serve"
+    echo "  npm install -g serve"
+    echo "  npx serve . -p $PORT"
+    exit 1
+fi

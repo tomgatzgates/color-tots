@@ -51,6 +51,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="modelSelect">AI Model:</label>
+                    <select id="modelSelect">
+                        <option value="imagen-fast">Imagen 4 Fast - $0.02/image (Budget)</option>
+                        <option value="imagen-standard" selected>Imagen 4 Standard - $0.04/image (Balanced)</option>
+                        <option value="imagen-ultra">Imagen 4 Ultra - $0.06/image (Premium)</option>
+                    </select>
+                    <small>Choose quality tier. All models use your same API key.</small>
+                </div>
+
+                <div class="form-group">
                     <label for="systemPrompt">System Prompt:</label>
                     <textarea id="systemPrompt" rows="8" placeholder="Enter your system prompt for image generation..."></textarea>
                     <small>Instructions for how the AI should generate coloring pages</small>
@@ -107,6 +117,7 @@
         <div id="errorMsg" class="error-msg hidden"></div>
     </div>
 
+    <script src="models.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

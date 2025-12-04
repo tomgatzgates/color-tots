@@ -7,6 +7,7 @@ const generateShareLinkBtn = document.getElementById('generateShareLink');
 const apiTokenInput = document.getElementById('apiToken');
 const pageSizeSelect = document.getElementById('pageSize');
 const orientationSelect = document.getElementById('orientation');
+const modelSelect = document.getElementById('modelSelect');
 const systemPromptInput = document.getElementById('systemPrompt');
 const promptInput = document.getElementById('promptInput');
 const generateBtn = document.getElementById('generateBtn');
@@ -47,6 +48,7 @@ function loadSettings() {
     const pageSize = localStorage.getItem('page_size') || 'a4';
     const orientation = localStorage.getItem('orientation') || 'landscape';
     const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
+    const model = localStorage.getItem('selected_model') || DEFAULT_MODEL;
 
     if (token) {
         apiTokenInput.value = token;
@@ -54,6 +56,7 @@ function loadSettings() {
     pageSizeSelect.value = pageSize;
     orientationSelect.value = orientation;
     systemPromptInput.value = systemPrompt;
+    modelSelect.value = model;
 }
 
 // Save settings
@@ -62,12 +65,14 @@ function saveSettings() {
     const pageSize = pageSizeSelect.value;
     const orientation = orientationSelect.value;
     const systemPrompt = systemPromptInput.value.trim();
+    const model = modelSelect.value;
 
     if (token) {
         localStorage.setItem('gemini_api_key', token);
     }
     localStorage.setItem('page_size', pageSize);
     localStorage.setItem('orientation', orientation);
+    localStorage.setItem('selected_model', model);
 
     if (systemPrompt) {
         localStorage.setItem('system_prompt', systemPrompt);
@@ -162,8 +167,8 @@ function getPageSizeDescription(size) {
 async function generateColoringPage() {
     const apiKey = localStorage.getItem('gemini_api_key');
     const prompt = promptInput.value.trim();
-    const pageSize = localStorage.getItem('page_size') || 'a4';
     const orientation = localStorage.getItem('orientation') || 'landscape';
+    const modelKey = localStorage.getItem('selected_model') || DEFAULT_MODEL;
 
     // Validation
     if (!apiKey) {
@@ -183,48 +188,19 @@ async function generateColoringPage() {
     generateBtn.disabled = true;
 
     try {
-        const pageSizeDesc = getPageSizeDescription(pageSize);
+        // Build full prompt
         const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
         const fullPrompt = `${systemPrompt} <image_description>${prompt}</image_description>`;
-        // Determine aspect ratio for Gemini
+
+        // Determine aspect ratio
         const aspectRatio = orientation === 'landscape' ? '16:9' : '9:16';
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`, {
-            method: 'POST',
-            headers: {
-                'x-goog-api-key': apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                instances: [
-                    {
-                        prompt: fullPrompt
-                    }
-                ],
-                parameters: {
-                    sampleCount: 1,
-                    aspectRatio: aspectRatio
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Failed to generate image');
-        }
-
-        const data = await response.json();
-
-        // Gemini returns base64 encoded images in predictions array
-        if (!data.predictions || data.predictions.length === 0) {
-            throw new Error('No image generated');
-        }
-
-        const imageBase64 = data.predictions[0].bytesBase64Encoded;
-        const mimeType = data.predictions[0].mimeType || 'image/png';
-        const imageUrl = `data:${mimeType};base64,${imageBase64}`;
+        // Create adapter and generate
+        const adapter = createModelAdapter(modelKey, apiKey);
+        const result = await adapter.generate(fullPrompt, { aspectRatio });
 
         // Display image
+        const imageUrl = `data:${result.mimeType};base64,${result.imageBase64}`;
         generatedImage.src = imageUrl;
         loading.classList.add('hidden');
         imageSection.classList.remove('hidden');
