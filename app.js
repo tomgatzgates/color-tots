@@ -4,7 +4,8 @@ const settingsModal = document.getElementById('settingsModal');
 const closeModal = document.querySelector('.close');
 const saveSettingsBtn = document.getElementById('saveSettings');
 const generateShareLinkBtn = document.getElementById('generateShareLink');
-const apiTokenInput = document.getElementById('apiToken');
+const googleApiTokenInput = document.getElementById('googleApiToken');
+const openaiApiTokenInput = document.getElementById('openaiApiToken');
 const pageSizeSelect = document.getElementById('pageSize');
 const orientationSelect = document.getElementById('orientation');
 const modelSelect = document.getElementById('modelSelect');
@@ -42,16 +43,30 @@ Scene Rules:
 - No realistic or complex details.
 `;
 
+// Migrate old API key storage format to new
+function migrateApiKeys() {
+    const oldKey = localStorage.getItem('gemini_api_key');
+    if (oldKey && !localStorage.getItem('google_api_key')) {
+        localStorage.setItem('google_api_key', oldKey);
+        localStorage.removeItem('gemini_api_key');
+        console.log('Migrated API key to new storage format');
+    }
+}
+
 // Load saved settings
 function loadSettings() {
-    const token = localStorage.getItem('gemini_api_key');
+    const googleToken = localStorage.getItem('google_api_key');
+    const openaiToken = localStorage.getItem('openai_api_key');
     const pageSize = localStorage.getItem('page_size') || 'a4';
     const orientation = localStorage.getItem('orientation') || 'landscape';
     const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
     const model = localStorage.getItem('selected_model') || DEFAULT_MODEL;
 
-    if (token) {
-        apiTokenInput.value = token;
+    if (googleToken) {
+        googleApiTokenInput.value = googleToken;
+    }
+    if (openaiToken) {
+        openaiApiTokenInput.value = openaiToken;
     }
     pageSizeSelect.value = pageSize;
     orientationSelect.value = orientation;
@@ -61,14 +76,18 @@ function loadSettings() {
 
 // Save settings
 function saveSettings() {
-    const token = apiTokenInput.value.trim();
+    const googleToken = googleApiTokenInput.value.trim();
+    const openaiToken = openaiApiTokenInput.value.trim();
     const pageSize = pageSizeSelect.value;
     const orientation = orientationSelect.value;
     const systemPrompt = systemPromptInput.value.trim();
     const model = modelSelect.value;
 
-    if (token) {
-        localStorage.setItem('gemini_api_key', token);
+    if (googleToken) {
+        localStorage.setItem('google_api_key', googleToken);
+    }
+    if (openaiToken) {
+        localStorage.setItem('openai_api_key', openaiToken);
     }
     localStorage.setItem('page_size', pageSize);
     localStorage.setItem('orientation', orientation);
@@ -103,21 +122,27 @@ saveSettingsBtn.addEventListener('click', saveSettings);
 
 // Generate shareable link with API key
 generateShareLinkBtn.addEventListener('click', () => {
-    const key = apiTokenInput.value.trim();
-    if (!key) {
-        showMessage('Please enter an API key first! 🔑');
+    const googleKey = googleApiTokenInput.value.trim();
+    const openaiKey = openaiApiTokenInput.value.trim();
+
+    if (!googleKey && !openaiKey) {
+        showMessage('Please enter at least one API key first! 🔑');
         return;
     }
 
     // Show security warning
+    const keyTypes = [];
+    if (googleKey) keyTypes.push('Google');
+    if (openaiKey) keyTypes.push('OpenAI');
+
     const confirmed = confirm(
         '⚠️ SECURITY WARNING ⚠️\n\n' +
-        'Sharing this link will expose your API key to anyone who receives it.\n\n' +
+        `Sharing this link will expose your ${keyTypes.join(' and ')} API key(s) to anyone who receives it.\n\n` +
         'Risks:\n' +
-        '• Anyone with this link can use your API key\n' +
+        '• Anyone with this link can use your API key(s)\n' +
         '• All usage will be charged to your account\n' +
-        '• The key may be visible in browser history\n' +
-        '• If forwarded, your key could spread further\n\n' +
+        '• The key(s) may be visible in browser history\n' +
+        '• If forwarded, your key(s) could spread further\n\n' +
         'Only share this link with trusted friends or family!\n\n' +
         'Do you want to continue?'
     );
@@ -127,12 +152,15 @@ generateShareLinkBtn.addEventListener('click', () => {
     }
 
     const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}#key=${key}`;
+    const hashParams = [];
+    if (googleKey) hashParams.push(`gkey=${encodeURIComponent(googleKey)}`);
+    if (openaiKey) hashParams.push(`okey=${encodeURIComponent(openaiKey)}`);
+    const shareUrl = `${baseUrl}#${hashParams.join('&')}`;
 
     // Copy to clipboard
     navigator.clipboard.writeText(shareUrl).then(() => {
         settingsModal.classList.remove('show');
-        showMessage('Link with embedded API key copied to clipboard.', 'success');
+        showMessage('Link with embedded API key(s) copied to clipboard.', 'success');
     }).catch(() => {
         // Fallback if clipboard API fails
         settingsModal.classList.remove('show');
@@ -165,15 +193,31 @@ function getPageSizeDescription(size) {
 
 // Generate coloring page
 async function generateColoringPage() {
-    const apiKey = localStorage.getItem('gemini_api_key');
+    const modelKey = localStorage.getItem('selected_model') || DEFAULT_MODEL;
     const prompt = promptInput.value.trim();
     const orientation = localStorage.getItem('orientation') || 'landscape';
-    const modelKey = localStorage.getItem('selected_model') || DEFAULT_MODEL;
 
-    // Validation
-    if (!apiKey) {
-        showMessage('Please set your Google Gemini API key in settings first! ⚙️');
+    // Get model config to determine provider
+    const modelConfig = ModelRegistry[modelKey];
+    if (!modelConfig) {
+        showMessage('Invalid model selected! 😢');
         return;
+    }
+
+    // Select correct API key based on provider
+    let apiKey;
+    if (modelConfig.provider === 'google') {
+        apiKey = localStorage.getItem('google_api_key');
+        if (!apiKey) {
+            showMessage('Please set your Google API key in settings first! ⚙️');
+            return;
+        }
+    } else if (modelConfig.provider === 'openai') {
+        apiKey = localStorage.getItem('openai_api_key');
+        if (!apiKey) {
+            showMessage('Please set your OpenAI API key in settings first! ⚙️');
+            return;
+        }
     }
 
     if (!prompt) {
@@ -192,12 +236,15 @@ async function generateColoringPage() {
         const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
         const fullPrompt = `${systemPrompt} <image_description>${prompt}</image_description>`;
 
-        // Determine aspect ratio
+        // Determine aspect ratio (for Google models)
         const aspectRatio = orientation === 'landscape' ? '16:9' : '9:16';
 
         // Create adapter and generate
         const adapter = createModelAdapter(modelKey, apiKey);
-        const result = await adapter.generate(fullPrompt, { aspectRatio });
+        const result = await adapter.generate(fullPrompt, {
+            aspectRatio,  // Used by Google models
+            orientation    // Used by OpenAI models (future enhancement)
+        });
 
         // Display image
         const imageUrl = `data:${result.mimeType};base64,${result.imageBase64}`;
@@ -300,29 +347,63 @@ function createStars() {
 // Check for API key in URL hash (for easy family sharing)
 function checkUrlHash() {
     const hash = window.location.hash;
-    if (hash && hash.startsWith('#key=')) {
-        const key = hash.substring(5); // Remove '#key='
-        if (key) {
-            localStorage.setItem('gemini_api_key', key);
+    if (!hash) return false;
+
+    let keysLoaded = false;
+
+    // Support new format: #gkey=...&okey=...
+    if (hash.includes('gkey=') || hash.includes('okey=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const googleKey = params.get('gkey');
+        const openaiKey = params.get('okey');
+
+        if (googleKey) {
+            localStorage.setItem('google_api_key', decodeURIComponent(googleKey));
+            keysLoaded = true;
+        }
+        if (openaiKey) {
+            localStorage.setItem('openai_api_key', decodeURIComponent(openaiKey));
+            keysLoaded = true;
+        }
+
+        if (keysLoaded) {
             // Clear the hash from URL for privacy
             history.replaceState(null, null, ' ');
-            showMessage('API key loaded from shared link! 🎉', 'success');
+            const keyTypes = [];
+            if (googleKey) keyTypes.push('Google');
+            if (openaiKey) keyTypes.push('OpenAI');
+            showMessage(`${keyTypes.join(' and ')} API key(s) loaded from shared link! 🎉`, 'success');
             return true;
         }
     }
+    // Support legacy format: #key=... (treat as Google key)
+    else if (hash.startsWith('#key=')) {
+        const key = hash.substring(5); // Remove '#key='
+        if (key) {
+            localStorage.setItem('google_api_key', decodeURIComponent(key));
+            // Clear the hash from URL for privacy
+            history.replaceState(null, null, ' ');
+            showMessage('Google API key loaded from shared link! 🎉', 'success');
+            return true;
+        }
+    }
+
     return false;
 }
 
 // Initialize
 checkUrlHash();
+migrateApiKeys();
 loadSettings();
 createStars();
 
 // Check if API key exists, if not show settings
-if (!localStorage.getItem('gemini_api_key')) {
+const hasGoogleKey = localStorage.getItem('google_api_key');
+const hasOpenAIKey = localStorage.getItem('openai_api_key');
+if (!hasGoogleKey && !hasOpenAIKey) {
     setTimeout(() => {
         settingsModal.classList.add('show');
-        showMessage('Welcome! Please enter your Google Gemini API key to get started 🚀', 'success');
+        showMessage('Welcome! Please enter an API key to get started 🚀', 'success');
     }, 500);
 }
 
