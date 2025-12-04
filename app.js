@@ -9,7 +9,6 @@ const openaiApiTokenInput = document.getElementById('openaiApiToken');
 const pageSizeSelect = document.getElementById('pageSize');
 const orientationSelect = document.getElementById('orientation');
 const modelSelect = document.getElementById('modelSelect');
-const systemPromptInput = document.getElementById('systemPrompt');
 const promptInput = document.getElementById('promptInput');
 const generateBtn = document.getElementById('generateBtn');
 const loading = document.getElementById('loading');
@@ -18,6 +17,24 @@ const generatedImage = document.getElementById('generatedImage');
 const printBtn = document.getElementById('printBtn');
 const newBtn = document.getElementById('newBtn');
 const errorMsg = document.getElementById('errorMsg');
+
+// Theme Management DOM Elements
+const contentThemeSelect = document.getElementById('contentThemeSelect');
+const styleTagsContainer = document.getElementById('styleTagsContainer');
+const manageThemesBtn = document.getElementById('manageThemesBtn');
+const themesModal = document.getElementById('themesModal');
+const closeThemesModal = document.getElementById('closeThemesModal');
+const editThemeModal = document.getElementById('editThemeModal');
+const closeEditThemeModal = document.getElementById('closeEditThemeModal');
+const builtinThemesList = document.getElementById('builtinThemesList');
+const customThemesList = document.getElementById('customThemesList');
+const createThemeBtn = document.getElementById('createThemeBtn');
+const themeName = document.getElementById('themeName');
+const themeDescription = document.getElementById('themeDescription');
+const themePrompt = document.getElementById('themePrompt');
+const saveTheme = document.getElementById('saveTheme');
+const cancelEditTheme = document.getElementById('cancelEditTheme');
+const editThemeTitle = document.getElementById('editThemeTitle');
 
 // Default system prompt
 const DEFAULT_SYSTEM_PROMPT = `Create a cute, child-friendly coloring book illustration.
@@ -43,6 +60,310 @@ Scene Rules:
 - No realistic or complex details.
 `;
 
+// Theme management state
+let editingThemeId = null;
+
+// Get active content theme ID
+function getActiveContentThemeId() {
+    return localStorage.getItem('selected_content_theme_id') || DEFAULT_CONTENT_THEME_ID;
+}
+
+// Set active content theme
+function setActiveContentTheme(id) {
+    localStorage.setItem('selected_content_theme_id', id);
+    contentThemeSelect.value = id;
+}
+
+// Get active style tags
+function getActiveStyleTags() {
+    const stored = localStorage.getItem('active_style_tags');
+    return stored ? JSON.parse(stored) : DEFAULT_STYLE_TAGS;
+}
+
+// Set active style tags
+function setActiveStyleTags(tags) {
+    localStorage.setItem('active_style_tags', JSON.stringify(tags));
+}
+
+// Toggle style tag
+function toggleStyleTag(tagId) {
+    const activeTags = getActiveStyleTags();
+    const index = activeTags.indexOf(tagId);
+
+    if (index > -1) {
+        // Remove tag
+        activeTags.splice(index, 1);
+    } else {
+        // Add tag
+        activeTags.push(tagId);
+    }
+
+    setActiveStyleTags(activeTags);
+    renderStyleTags();
+}
+
+// Populate content theme dropdown
+function populateContentThemeSelect() {
+    const themes = getAllContentThemes();
+    const activeId = getActiveContentThemeId();
+
+    contentThemeSelect.innerHTML = '';
+
+    // Group by built-in and custom
+    const builtinOptgroup = document.createElement('optgroup');
+    builtinOptgroup.label = 'Built-in Themes';
+
+    const customOptgroup = document.createElement('optgroup');
+    customOptgroup.label = 'Your Custom Themes';
+
+    let hasCustom = false;
+
+    themes.forEach(theme => {
+        const option = document.createElement('option');
+        option.value = theme.id;
+        option.textContent = theme.name;
+
+        if (theme.isBuiltIn) {
+            builtinOptgroup.appendChild(option);
+        } else {
+            customOptgroup.appendChild(option);
+            hasCustom = true;
+        }
+    });
+
+    contentThemeSelect.appendChild(builtinOptgroup);
+    if (hasCustom) {
+        contentThemeSelect.appendChild(customOptgroup);
+    }
+
+    contentThemeSelect.value = activeId;
+}
+
+// Render style tag chips
+function renderStyleTags() {
+    const activeTags = getActiveStyleTags();
+
+    styleTagsContainer.innerHTML = BUILTIN_STYLE_TAGS.map(tag => {
+        const isActive = activeTags.includes(tag.id);
+        return `
+            <button
+                class="style-tag-chip ${isActive ? 'active' : ''}"
+                onclick="toggleStyleTag('${tag.id}')"
+                title="${tag.description}"
+            >
+                ${tag.emoji} ${tag.name}
+            </button>
+        `;
+    }).join('');
+}
+
+// Handle content theme selection change
+contentThemeSelect.addEventListener('change', () => {
+    setActiveContentTheme(contentThemeSelect.value);
+    showMessage('Theme switched!', 'success');
+});
+
+// Show themes management modal
+manageThemesBtn.addEventListener('click', () => {
+    renderThemesModal();
+    themesModal.classList.add('show');
+});
+
+// Close theme modals
+closeThemesModal.addEventListener('click', () => {
+    themesModal.classList.remove('show');
+});
+
+closeEditThemeModal.addEventListener('click', () => {
+    editThemeModal.classList.remove('show');
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target === themesModal) {
+        themesModal.classList.remove('show');
+    }
+    if (e.target === editThemeModal) {
+        editThemeModal.classList.remove('show');
+    }
+});
+
+// Render themes in management modal
+function renderThemesModal() {
+    const customThemes = loadCustomContentThemes();
+    const activeId = getActiveContentThemeId();
+
+    // Render built-in themes
+    builtinThemesList.innerHTML = BUILTIN_CONTENT_THEMES.map(theme => `
+        <div class="theme-item ${theme.id === activeId ? 'active' : ''}">
+            <div class="theme-info">
+                <h4>${theme.name}</h4>
+                <p>${theme.description}</p>
+            </div>
+            <div class="theme-actions">
+                <button class="use-btn" onclick="useTheme('${theme.id}')">
+                    ${theme.id === activeId ? '✓ Active' : 'Use'}
+                </button>
+                <button class="duplicate-btn" onclick="duplicateTheme('${theme.id}')" title="Duplicate">
+                    📋
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    // Render custom themes
+    if (customThemes.length === 0) {
+        customThemesList.innerHTML = '<p style="color: #666; font-style: italic;">No custom themes yet. Create your first one!</p>';
+    } else {
+        customThemesList.innerHTML = customThemes.map(theme => `
+            <div class="theme-item ${theme.id === activeId ? 'active' : ''}">
+                <div class="theme-info">
+                    <h4>${theme.name}</h4>
+                    <p>${theme.description || 'Custom theme'}</p>
+                </div>
+                <div class="theme-actions">
+                    <button class="use-btn" onclick="useTheme('${theme.id}')">
+                        ${theme.id === activeId ? '✓ Active' : 'Use'}
+                    </button>
+                    <button class="edit-btn" onclick="editTheme('${theme.id}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteTheme('${theme.id}')">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+// Use theme (set as active)
+window.useTheme = function(id) {
+    setActiveContentTheme(id);
+    populateContentThemeSelect();
+    renderThemesModal();
+    showMessage('Theme activated!', 'success');
+};
+
+// Create new theme
+createThemeBtn.addEventListener('click', () => {
+    editingThemeId = null;
+    editThemeTitle.textContent = 'Create New Theme';
+    themeName.value = '';
+    themeDescription.value = '';
+    themePrompt.value = '';
+
+    themesModal.classList.remove('show');
+    editThemeModal.classList.add('show');
+});
+
+// Edit theme
+window.editTheme = function(id) {
+    const theme = getContentThemeById(id);
+    if (!theme || theme.isBuiltIn) return;
+
+    editingThemeId = id;
+    editThemeTitle.textContent = 'Edit Theme';
+    themeName.value = theme.name;
+    themeDescription.value = theme.description || '';
+    themePrompt.value = theme.prompt;
+
+    themesModal.classList.remove('show');
+    editThemeModal.classList.add('show');
+};
+
+// Duplicate theme
+window.duplicateTheme = function(id) {
+    const theme = getContentThemeById(id);
+    if (!theme) return;
+
+    editingThemeId = null;
+    editThemeTitle.textContent = 'Create Theme (from ' + theme.name + ')';
+    themeName.value = theme.name + ' (Copy)';
+    themeDescription.value = theme.description || '';
+    themePrompt.value = theme.prompt;
+
+    themesModal.classList.remove('show');
+    editThemeModal.classList.add('show');
+};
+
+// Save theme
+saveTheme.addEventListener('click', () => {
+    const name = themeName.value.trim();
+    const description = themeDescription.value.trim();
+    const prompt = themePrompt.value.trim();
+
+    if (!name) {
+        showMessage('Please enter a theme name!');
+        return;
+    }
+
+    if (!prompt) {
+        showMessage('Please enter a prompt!');
+        return;
+    }
+
+    const customThemes = loadCustomContentThemes();
+
+    if (editingThemeId) {
+        // Edit existing
+        const index = customThemes.findIndex(t => t.id === editingThemeId);
+        if (index !== -1) {
+            customThemes[index] = {
+                ...customThemes[index],
+                name,
+                description,
+                prompt
+            };
+        }
+    } else {
+        // Create new
+        const newTheme = {
+            id: 'custom-' + Date.now(),
+            name,
+            description,
+            prompt,
+            isBuiltIn: false
+        };
+        customThemes.push(newTheme);
+    }
+
+    saveCustomContentThemes(customThemes);
+    populateContentThemeSelect();
+
+    editThemeModal.classList.remove('show');
+    themesModal.classList.add('show');
+    renderThemesModal();
+
+    showMessage(editingThemeId ? 'Theme updated!' : 'Theme created!', 'success');
+});
+
+// Cancel edit
+cancelEditTheme.addEventListener('click', () => {
+    editThemeModal.classList.remove('show');
+    themesModal.classList.add('show');
+});
+
+// Delete theme
+window.deleteTheme = function(id) {
+    const theme = getContentThemeById(id);
+    if (!theme || theme.isBuiltIn) return;
+
+    const confirmed = confirm(`Delete theme "${theme.name}"?\n\nThis cannot be undone.`);
+    if (!confirmed) return;
+
+    const customThemes = loadCustomContentThemes();
+    const filtered = customThemes.filter(t => t.id !== id);
+    saveCustomContentThemes(filtered);
+
+    // If deleting active theme, switch to default
+    if (getActiveContentThemeId() === id) {
+        setActiveContentTheme(DEFAULT_CONTENT_THEME_ID);
+    }
+
+    populateContentThemeSelect();
+    renderThemesModal();
+    showMessage('Theme deleted!', 'success');
+};
+
+// Make toggleStyleTag available globally
+window.toggleStyleTag = toggleStyleTag;
+
 // Migrate old API key storage format to new
 function migrateApiKeys() {
     const oldKey = localStorage.getItem('gemini_api_key');
@@ -59,7 +380,6 @@ function loadSettings() {
     const openaiToken = localStorage.getItem('openai_api_key');
     const pageSize = localStorage.getItem('page_size') || 'a4';
     const orientation = localStorage.getItem('orientation') || 'landscape';
-    const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
     const model = localStorage.getItem('selected_model') || DEFAULT_MODEL;
 
     if (googleToken) {
@@ -70,7 +390,6 @@ function loadSettings() {
     }
     pageSizeSelect.value = pageSize;
     orientationSelect.value = orientation;
-    systemPromptInput.value = systemPrompt;
     modelSelect.value = model;
 }
 
@@ -80,7 +399,6 @@ function saveSettings() {
     const openaiToken = openaiApiTokenInput.value.trim();
     const pageSize = pageSizeSelect.value;
     const orientation = orientationSelect.value;
-    const systemPrompt = systemPromptInput.value.trim();
     const model = modelSelect.value;
 
     if (googleToken) {
@@ -93,14 +411,8 @@ function saveSettings() {
     localStorage.setItem('orientation', orientation);
     localStorage.setItem('selected_model', model);
 
-    if (systemPrompt) {
-        localStorage.setItem('system_prompt', systemPrompt);
-    } else {
-        localStorage.setItem('system_prompt', DEFAULT_SYSTEM_PROMPT);
-    }
-
     settingsModal.classList.remove('show');
-    showMessage('Settings saved! 🎉', 'success');
+    showMessage('Settings saved!', 'success');
 }
 
 // Show/hide modal
@@ -232,9 +544,11 @@ async function generateColoringPage() {
     generateBtn.disabled = true;
 
     try {
-        // Build full prompt
-        const systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_SYSTEM_PROMPT;
-        const fullPrompt = `${systemPrompt} <image_description>${prompt}</image_description>`;
+        // Build full prompt using composable themes
+        const contentThemeId = getActiveContentThemeId();
+        const activeStyleTags = getActiveStyleTags();
+        const systemPrompt = composePrompt(contentThemeId, activeStyleTags);
+        const fullPrompt = `${systemPrompt}\n\n<image_description>${prompt}</image_description>`;
 
         // Determine aspect ratio (for Google models)
         const aspectRatio = orientation === 'landscape' ? '16:9' : '9:16';
@@ -391,10 +705,53 @@ function checkUrlHash() {
     return false;
 }
 
+// Migrate existing system prompt to custom theme
+function migrateSystemPromptToTheme() {
+    // Check if user has a custom system prompt and hasn't been migrated yet
+    const customPrompt = localStorage.getItem('system_prompt');
+    const customThemes = loadCustomContentThemes();
+    const hasMigrated = localStorage.getItem('prompt_migrated');
+
+    if (customPrompt && customThemes.length === 0 && !hasMigrated) {
+        // Check if it's different from the default
+        const isCustom = customPrompt !== DEFAULT_SYSTEM_PROMPT;
+
+        if (isCustom) {
+            // Create a custom theme from their prompt
+            const migratedTheme = {
+                id: 'custom-migrated',
+                name: 'My Custom Prompt',
+                description: 'Migrated from your previous settings',
+                prompt: customPrompt,
+                isBuiltIn: false
+            };
+
+            customThemes.push(migratedTheme);
+            saveCustomContentThemes(customThemes);
+
+            // Set it as active
+            localStorage.setItem('selected_content_theme_id', 'custom-migrated');
+        }
+
+        localStorage.setItem('prompt_migrated', 'true');
+    }
+}
+
+// Initialize themes
+function initializeThemes() {
+    // Migrate old system prompt first
+    migrateSystemPromptToTheme();
+
+    // Populate UI
+    populateContentThemeSelect();
+    renderStyleTags();
+}
+
 // Initialize
 checkUrlHash();
 migrateApiKeys();
 loadSettings();
+initializeThemes();
 createStars();
 
 // Check if API key exists, if not show settings

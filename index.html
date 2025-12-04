@@ -74,12 +74,31 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="systemPrompt">System Prompt:</label>
-                    <textarea id="systemPrompt" rows="8" placeholder="Enter your system prompt for image generation..."></textarea>
-                    <small>Instructions for how the AI should generate coloring pages</small>
+                    <label>Page Themes:</label>
+                    <button class="manage-themes-btn" id="manageThemesBtn" type="button">
+                        Manage Page Themes
+                    </button>
+                    <small>Customize content themes and style tags for your coloring pages</small>
                 </div>
 
                 <button class="save-btn" id="saveSettings">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Page Theme Selector -->
+        <div class="theme-selector">
+            <div class="theme-dropdown-row">
+                <label for="contentThemeSelect">Page Theme:</label>
+                <select id="contentThemeSelect" class="content-theme-select">
+                    <!-- Options populated by JavaScript -->
+                </select>
+            </div>
+
+            <div class="style-tags-row">
+                <label>Style:</label>
+                <div id="styleTagsContainer" class="style-tags-container">
+                    <!-- Style tag chips populated by JavaScript -->
+                </div>
             </div>
         </div>
 
@@ -128,9 +147,66 @@
 
         <!-- Error Display -->
         <div id="errorMsg" class="error-msg hidden"></div>
+
+        <!-- Page Themes Management Modal -->
+        <div id="themesModal" class="modal">
+            <div class="modal-content themes-modal-content">
+                <span class="close" id="closeThemesModal">&times;</span>
+                <h2>Page Themes</h2>
+
+                <!-- Built-in Themes Section -->
+                <div class="themes-section">
+                    <h3>Built-in Themes</h3>
+                    <div id="builtinThemesList" class="themes-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Custom Themes Section -->
+                <div class="themes-section">
+                    <h3>Your Custom Themes</h3>
+                    <div id="customThemesList" class="themes-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    <button class="create-theme-btn" id="createThemeBtn">
+                        + Create New Theme
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit/Create Theme Modal -->
+        <div id="editThemeModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeEditThemeModal">&times;</span>
+                <h2 id="editThemeTitle">Edit Theme</h2>
+
+                <div class="form-group">
+                    <label for="themeName">Theme Name:</label>
+                    <input type="text" id="themeName" placeholder="My Custom Theme">
+                </div>
+
+                <div class="form-group">
+                    <label for="themeDescription">Description (optional):</label>
+                    <input type="text" id="themeDescription" placeholder="What this theme is good for...">
+                </div>
+
+                <div class="form-group">
+                    <label for="themePrompt">Prompt:</label>
+                    <textarea id="themePrompt" rows="12" placeholder="Enter your content theme prompt..."></textarea>
+                    <small>ℹ️ Style tags (Toddler, Detailed, etc.) will be automatically applied</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="cancel-btn" id="cancelEditTheme">Cancel</button>
+                    <button class="save-btn" id="saveTheme">Save Theme</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="models.js"></script>
+    <script src="themes.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
